@@ -1,6 +1,27 @@
 /**
+ * --------------------------------------------------------------------------
  * utm-parameter-auditor - Google Ads Script for SMBs
- * Author: Thibault Fayol
+ * --------------------------------------------------------------------------
+ * Author: Thibault Fayol - Consultant SEA PME
+ * Website: https://thibaultfayol.com
+ * License: MIT
+ * --------------------------------------------------------------------------
  */
-var CONFIG = { TEST_MODE: true };
-function main(){ Logger.log("Verifying ValueTrack and UTM parameters..."); }
+var CONFIG = { TEST_MODE: true, REQUIRED_UTM: "utm_source" };
+function main() {
+    Logger.log("Auditing UTM parameters...");
+    var adIter = AdsApp.ads().withCondition("Status = ENABLED").get();
+    var missingCount = 0;
+    while(adIter.hasNext()) {
+        var ad = adIter.next();
+        var trackingTemplate = ad.urls().getTrackingTemplate() || ad.getCampaign().urls().getTrackingTemplate() || "";
+        var finalUrls = ad.urls().getFinalUrls();
+        var url = finalUrls && finalUrls.length > 0 ? finalUrls[0] : "";
+        
+        if (trackingTemplate.indexOf(CONFIG.REQUIRED_UTM) === -1 && url.indexOf(CONFIG.REQUIRED_UTM) === -1) {
+            Logger.log("Missing UTM for Ad ID " + ad.getId() + " - " + url);
+            missingCount++;
+        }
+    }
+    Logger.log("Found " + missingCount + " missing tags.");
+}
